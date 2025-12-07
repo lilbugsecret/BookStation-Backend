@@ -1,135 +1,247 @@
-# BookStation Backend
+# BookStation – Hệ thống quản lý và bán sách trực tuyến
+
+BookStation là hệ thống web hỗ trợ quản lý và bán sách, bao gồm các tính năng từ phía khách hàng (mua sách, giỏ hàng, đơn hàng, đánh giá, khuyến mãi, tích điểm) đến phía quản trị (quản lý kho, đơn hàng, flash sale, chiến dịch marketing, thống kê nâng cao…).
+
+Dự án gồm:
+- **Backend:** Spring Boot (Java 17), SQL Server, Spring Security + JWT
+- **Frontend:** Vue 3, Vite, Bootstrap
 
 ---
 
-## 📌 Mục lục
-- [1. Giới thiệu](#1-giới-thiệu)
-- [2. Công nghệ sử dụng](#2-công-nghệ-sử-dụng)
-- [3. Cấu trúc dự án](#3-cấu-trúc-dự-án)
-- [4. Hướng dẫn chạy](#4-hướng-dẫn-chạy)
-- [5. Quy tắc đặt tên (Naming Convention)](#5-quy-tắc-đặt-tên-naming-convention)
-- [6. Thông tin khác](#6-thông-tin-khác)
-- [🎪 Hệ thống quản lý sự kiện](#-hệ-thống-quản-lý-sự-kiện)
+## 1. Tính năng chính
+
+### 1.1. Dành cho khách hàng
+
+- **Tài khoản và xác thực**
+  - Đăng ký, đăng nhập với JWT
+  - Quản lý thông tin tài khoản cá nhân
+  - Lưu trạng thái đăng nhập trên trình duyệt và tự động gửi token khi gọi API
+
+- **Duyệt và tìm kiếm sách**
+  - Xem danh sách sách theo danh mục, tác giả, nhà xuất bản
+  - Tìm kiếm sách theo từ khóa
+  - Xem chi tiết sách: mô tả, giá, tồn kho, nhà cung cấp, đánh giá…
+
+- **Giỏ hàng và mua sách**
+  - Thêm sách vào giỏ, cập nhật số lượng, xóa khỏi giỏ
+  - Tính tổng tiền tạm tính và các ưu đãi áp dụng
+  - Tạo đơn hàng từ giỏ hàng
+
+- **Thanh toán và đơn hàng**
+  - Tạo phiên thanh toán (checkout) cho đơn hàng
+  - Theo dõi trạng thái đơn (chờ xác nhận, đang xử lý, đang giao, hoàn thành, hủy)
+  - Yêu cầu hoàn tiền, gửi kèm minh chứng (hình ảnh, file đính kèm)
+
+- **Địa chỉ và giao hàng**
+  - Quản lý danh sách địa chỉ giao hàng
+  - Chọn địa chỉ giao hàng khi đặt mua
+
+- **Đánh giá và nhận xét**
+  - Viết đánh giá, nhận xét cho sách đã mua
+  - Xem đánh giá của người dùng khác cho mỗi sách
+
+- **Tích điểm và xếp hạng**
+  - Tích điểm khi mua hàng
+  - Xem hạng thành viên và lợi ích tương ứng
+  - Đổi điểm, sử dụng điểm để nhận ưu đãi (nếu được cấu hình)
+
+- **Khuyến mãi, Flash Sale, Voucher**
+  - Tham gia các chương trình khuyến mãi, chiến dịch marketing
+  - Xem và mua hàng trong các đợt flash sale với mức giảm giá đặc biệt
+  - Áp dụng mã giảm giá (voucher) vào đơn hàng
+
+- **Minigame và tương tác**
+  - Tham gia các minigame (nếu được bật trong hệ thống)
+  - Nhận phần thưởng, điểm hoặc mã giảm giá từ minigame
 
 ---
 
-## 1. Giới thiệu
-<!-- Để trống -->
+### 1.2. Dành cho quản trị viên
+
+- **Quản lý sách và danh mục**
+  - Thêm, sửa, xóa sách
+  - Cấu hình danh mục, tác giả, nhà xuất bản, nhà cung cấp
+  - Quản lý hình ảnh, dữ liệu liên quan đến sách
+
+- **Quản lý kho và bán tại quầy**
+  - Quản lý tồn kho, điều chỉnh số lượng
+  - Hỗ trợ tạo đơn bán trực tiếp tại quầy
+  - Kết hợp dữ liệu bán online và bán trực tiếp
+
+- **Quản lý đơn hàng và hoàn tiền**
+  - Xem danh sách đơn hàng theo nhiều tiêu chí
+  - Cập nhật trạng thái đơn hàng trong toàn bộ vòng đời
+  - Tiếp nhận yêu cầu hoàn tiền, xử lý chứng cứ hoàn tiền và cập nhật kết quả
+
+- **Chương trình khuyến mãi, Flash Sale, Voucher**
+  - Tạo và quản lý chiến dịch khuyến mãi
+  - Cấu hình flash sale: thời gian, danh sách sách, mức giảm, giới hạn số lượng
+  - Tạo và quản lý voucher (mã giảm giá), điều kiện sử dụng
+
+- **Hệ thống điểm thưởng và xếp hạng**
+  - Cài đặt và quản lý các hạng thành viên
+  - Cấu hình cách tính và sử dụng điểm thưởng
+  - Theo dõi lịch sử điểm và phần thưởng của người dùng
+
+- **Thống kê và báo cáo**
+  - Dashboard tổng quan: doanh thu, số lượng đơn hàng, số lượng khách hàng, sản phẩm bán chạy
+  - Thống kê chi tiết theo thời gian, chiến dịch, kênh bán
+  - Xuất báo cáo ra PDF / Excel
+  - Phân tích nâng cao cho các chỉ số kinh doanh
+
+- **Quản lý người dùng**
+  - Theo dõi danh sách tài khoản
+  - Kiểm tra hạng, điểm, đơn hàng liên quan
+  - Thực hiện các thao tác quản trị nội bộ (tùy thuộc cấu hình thực tế)
+
+---
 
 ## 2. Công nghệ sử dụng
-<!-- Để trống -->
 
-## 3. Cấu trúc dự án
-<!-- Để trống -->
+### 2.1. Backend
 
-## 4. Hướng dẫn chạy
-<!-- Để trống -->
+- **Ngôn ngữ:** Java 17  
+- **Framework:**
+  - Spring Boot
+  - Spring Web (REST API)
+  - Spring Security + JWT (xác thực và phân quyền)
+  - Spring Data JPA / Hibernate
+- **Cơ sở dữ liệu:** SQL Server
+- **Build & Dependency:** Maven
 
-## 5. Quy tắc đặt tên (Naming Convention)
+### 2.2. Frontend
 
-### 5.1 Package
-- Tất cả chữ thường, không dấu, không gạch dưới, không viết hoa.
-- Nếu nhiều từ, viết liền hoặc tách bằng dấu chấm cho rõ nghĩa.
-- **Ví dụ:**
-  - `com.example.attendance`
-  - `com.example.attendance.user.staff`
-  - `com.example.attendance.dto.request`
-
-### 5.2 Class & File
-- Viết hoa chữ cái đầu mỗi từ (PascalCase/UpperCamelCase).
-- Tên file trùng tên class.
-- **Ví dụ:**
-  - `UserController.java`
-  - `AttendanceService.java`
-  - `UserCreateRequest.java`
-
-### 5.3 Interface
-- Giống class, thường kết thúc bằng "able", "er", "Service", "Repository",...
-- **Ví dụ:**
-  - `UserRepository`
-  - `AttendanceService`
-
-### 5.4 Biến (Variable)
-- camelCase, chữ thường, từ thứ 2 viết hoa chữ cái đầu.
-- **Ví dụ:**
-  - `userName`
-  - `attendanceList`
-
-### 5.5 Hằng số (Constant)
-- Chữ in hoa, các từ cách nhau bằng dấu gạch dưới (_).
-- **Ví dụ:**
-  - `MAX_ATTENDANCE`
-  - `DEFAULT_ROLE`
-
-### 5.6 Method (Hàm)
-- camelCase, động từ đứng đầu, rõ nghĩa.
-- **Ví dụ:**
-  - `getUserById()`
-  - `calculateAttendanceRate()`
-
-### 5.7 DTO (Data Transfer Object)
-- Kết thúc bằng `Request` hoặc `Response`.
-- Nếu nhiều loại, chia package con: `dto.request`, `dto.response`.
-- **Ví dụ:**
-  - `UserLoginRequest`
-  - `UserLoginResponse`
-  - `AttendanceSummaryResponse`
-
-### 5.8 Đặt tên package nhiều từ
-Đúng:
-Sử dụng dấu gạch ngang (-) để phân tách các từ, giúp tên package rõ ràng và dễ đọc.
-Ví dụ: user-management, order-processing.
-Sai:
-Không sử dụng gạch dưới (_), chữ hoa (CamelCase), hoặc ký tự không hợp lệ khác.
-Ví dụ sai: user_management, userManagement, user-staff, user staff.
-### 5.9 Lưu ý chung
-- Không dùng tiếng Việt, không viết tắt khó hiểu.
-- Tên phải rõ ràng, mô tả đúng chức năng.
-- Không dùng ký tự đặc biệt, trừ dấu gạch dưới cho hằng số.
-
-#### Ví dụ tổng hợp
-
-com.example.attendance.dto.request.UserCreateRequest
-com.example.attendance.dto.response.UserResponse
-com.example.attendance.controller.UserController
-com.example.attendance.service.AttendanceService
-com.example.attendance.entity.User
+- **Framework:** Vue 3
+- **Bundler:** Vite
+- **UI:** Bootstrap
+- **HTTP client:** Axios (hoặc fetch, tùy implementation trong repo)
 
 ---
 
-## 6. Thông tin khác
-<!-- Để trống -->
+## 3. Cách chạy Backend (BookStation-Backend)
 
-## 🎪 Hệ thống quản lý sự kiện
+### 3.1. Yêu cầu
 
-BookStation hiện đã được tích hợp **hệ thống quản lý sự kiện** hoàn chỉnh, hỗ trợ các loại sự kiện đa dạng như cuộc thi review, flash sale, gặp gỡ tác giả, v.v.
+- Java 17
+- Maven 3.x
+- SQL Server đã cài đặt và tạo sẵn database
 
-### 📋 **Tính năng chính:**
-- ✅ **Quản lý danh mục sự kiện** - Phân loại theo chủ đề
-- ✅ **Tạo sự kiện đa dạng** - Review, sale, offline event...  
-- ✅ **Hệ thống quà tặng linh hoạt** - Voucher, sách, điểm, quà vật lý
-- ✅ **Theo dõi người tham gia** - Trạng thái realtime
-- ✅ **Xử lý claim quà** - Online/offline, nhiều phương thức
-- ✅ **Audit trail đầy đủ** - Lịch sử mọi hoạt động
+### 3.2. Cấu hình kết nối SQL Server
 
-### 📁 **Tài liệu chi tiết:**
-- [📊 Phân tích mục đích từng bảng](src/main/resources/sql/TABLE_PURPOSE_ANALYSIS.md)
-- [📚 Giải thích đơn giản 6 bảng](src/main/resources/sql/DETAILED_TABLE_EXPLANATION.md)  
-- [🔄 Workflow tổng hợp](src/main/resources/sql/COMPLETE_WORKFLOW_EXAMPLE.md)
-- [🎯 Workflow đơn giản](src/main/resources/sql/SIMPLE_EVENT_WORKFLOW.md)
-- [📈 Event workflow diagram](src/main/resources/sql/EVENT_WORKFLOW_DIAGRAM.md)
+Trong `src/main/resources/application.properties` (hoặc `.yml`), cấu hình tương tự:
 
-### 🗃️ **Database Schema:**
-- [🏗️ Tạo bảng](src/main/resources/sql/create_event_tables.sql)
-- [📊 Dữ liệu mẫu](src/main/resources/sql/event_sample_data.sql)  
-- [🎯 Ví dụ thực tế](src/main/resources/sql/event_real_example.sql)
+```properties
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=BookStation
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
 
-### 🎯 **Ví dụ sự kiện thực tế:**
-```sql
--- Cuộc thi "Review Hay Nhận Quà" 
-Event: Viết 3 review ≥ 100 từ trong tháng 7
-Quà tặng: 
-├─ 🎁 Voucher 100K (20 suất)
-├─ 📚 Sách "Đắc Nhân Tâm" miễn phí (50 suất)  
-└─ ⭐ 200 điểm thưởng (unlimited)
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServerDialect
+
+# Cấu hình JWT, đặt theo key mà dự án đang sử dụng
+jwt.secret=your_jwt_secret
+jwt.expiration=3600000
 ```
+
+### 3.3. Build và chạy
+
+```bash
+git clone https://github.com/lilbugsecret/BookStation-Backend.git
+cd BookStation-Backend
+
+mvn clean install
+mvn spring-boot:run
+```
+
+Mặc định (nếu không đổi) server chạy tại:
+
+- `http://localhost:8080`
+
+---
+
+## 4. Cách chạy Frontend (BookStation-Frontend)
+
+### 4.1. Yêu cầu
+
+- Node.js (khuyến nghị >= 18)
+- npm hoặc yarn
+
+### 4.2. Cài đặt và cấu hình
+
+```bash
+git clone https://github.com/lilbugsecret/BookStation-Frontend.git
+cd BookStation-Frontend
+
+npm install
+# hoặc
+yarn install
+```
+
+Cấu hình URL backend (trong `.env` hoặc file config):
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+### 4.3. Chạy ở chế độ phát triển
+
+```bash
+npm run dev
+# hoặc
+yarn dev
+```
+
+Truy cập:
+
+- `http://localhost:5173` (mặc định Vite) hoặc theo port log hiển thị.
+
+---
+
+## 5. Build và triển khai
+
+### 5.1. Backend
+
+```bash
+mvn clean package
+java -jar target/bookstation-*.jar
+```
+
+Triển khai trên:
+- VPS / máy chủ riêng
+- Nền tảng cloud (Azure, AWS, GCP, Render,…)
+- Kết hợp reverse proxy (Nginx/Apache) để bật HTTPS
+
+### 5.2. Frontend
+
+```bash
+npm run build
+# hoặc
+yarn build
+```
+
+Deploy thư mục `dist/` lên:
+- Nginx / Apache
+- Vercel / Netlify / bất kỳ static hosting nào
+
+---
+
+## 6. Ghi chú
+
+- Không commit thông tin nhạy cảm (password DB, JWT secret) lên repository.
+- Sử dụng biến môi trường cho cấu hình production.
+- Cấu hình CORS trên backend để chỉ cho phép domain frontend hợp lệ truy cập API.
+
+---
+
+## 7. Đóng góp
+
+1. Fork repository
+2. Tạo branch mới từ `main`
+3. Commit thay đổi với message rõ ràng
+4. Tạo Pull Request mô tả nội dung chỉnh sửa
+
+Issues:
+- Backend: https://github.com/lilbugsecret/BookStation-Backend/issues  
+- Frontend: https://github.com/lilbugsecret/BookStation-Frontend/issues
