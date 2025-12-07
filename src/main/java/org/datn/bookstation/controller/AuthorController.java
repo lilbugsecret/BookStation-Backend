@@ -1,5 +1,6 @@
 package org.datn.bookstation.controller;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.datn.bookstation.dto.response.ApiResponse;
 import org.datn.bookstation.dto.response.DropdownOptionResponse;
@@ -19,58 +20,86 @@ import java.util.stream.Collectors;
 public class AuthorController {
     private final AuthorService authorService;
 
-//    @GetMapping
-//    public ResponseEntity<ApiResponse<List<Author>>> getAll() {
-//        return ResponseEntity.ok(authorService.getAll());
-//    }
-
     @GetMapping
-    public ResponseEntity<ApiResponse<PaginationResponse<Author>>> getPage(
+    public ApiResponse<List<Author>> getAll() {
+        return authorService.getAll();
+    }
+
+
+    @GetMapping("/page")
+    public ApiResponse<PaginationResponse<Author>> getPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) Byte status
-    ){
-        PaginationResponse<Author> authors = authorService.getAllAuthorPagination(page, size, name, status);
-        ApiResponse<PaginationResponse<Author>> response = new ApiResponse<>(HttpStatus.OK.value(), "Thành công", authors);
-        return ResponseEntity.ok(response);
+            @RequestParam(required = false) Byte status) {
+        return authorService.getAllAuthorPagination(page, size, name, status);
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Author>> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(authorService.getById(id));
+    public ApiResponse<Author> getById(@PathVariable Integer id) {
+        return authorService.getById(id);
     }
 
+    // ✅ Sửa ADD với validation đầy đủ
     @PostMapping
-    public ResponseEntity<ApiResponse<Author>> add(@RequestBody Author author) {
-        System.out.println(author);
-        return ResponseEntity.ok(authorService.add(author));
+    public ResponseEntity<ApiResponse<Author>> add( @RequestBody Author author) {
+        ApiResponse<Author> response = authorService.add(author);
+
+        if (response.getStatus() == 404) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(404, response.getMessage(), null));
+        }
+
+        if (response.getStatus() == 400) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(400, response.getMessage(), null));
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(201, "Tạo tác giả thành công", response.getData()));
     }
 
+    // ✅ Sửa UPDATE với validation đầy đủ
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Author>> update(@PathVariable Integer id, @RequestBody Author author) {
-        return ResponseEntity.ok(authorService.update(author, id));
+    public ResponseEntity<ApiResponse<Author>> update(@PathVariable Integer id,  @RequestBody Author author) {
+        ApiResponse<Author> response = authorService.update(author, id);
+
+        if (response.getStatus() == 404) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(404, response.getMessage(), null));
+        }
+
+        if (response.getStatus() == 400) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(400, response.getMessage(), null));
+        }
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(200, "Cập nhật tác giả thành công", response.getData()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        authorService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ApiResponse<Author> delete(@PathVariable Integer id) {
+        return authorService.delete(id);
     }
+
     @PatchMapping("/{id}/toggle-status")
-    public ResponseEntity<ApiResponse<Author>> toggleStatus(@PathVariable Integer id) {
-        ApiResponse<Author> response = authorService.toggleStatus(id);
-        if (response.getStatus() == 404) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(404, "Không tìm thấy", null));
-        }
-        return ResponseEntity.ok(new ApiResponse<>(200, "Cập nhật trạng thái thành công", response.getData()));
+    public ApiResponse<Author> toggleStatus(@PathVariable Integer id) {
+        return authorService.toggleStatus(id);
     }
 
     @GetMapping("/dropdown")
-    public ResponseEntity<ApiResponse<List<DropdownOptionResponse>>> getDropdownAuthors() {
-        List<DropdownOptionResponse> dropdown = authorService.getActiveAuthors().stream()
-            .map(author -> new DropdownOptionResponse(author.getId(), author.getAuthorName()))
-            .collect(Collectors.toList());
-        ApiResponse<List<DropdownOptionResponse>> response = new ApiResponse<>(HttpStatus.OK.value(), "Lấy danh sách tác giả thành công", dropdown);
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<DropdownOptionResponse>> getDropdownAuthors() {
+        ApiResponse<List<Author>> authorsResponse = authorService.getActiveAuthors();
+
+        if (authorsResponse.getStatus() != 200) {
+            return new ApiResponse<>(500, "Lỗi khi lấy danh sách tác giả", null);
+        }
+
+        List<DropdownOptionResponse> dropdown = authorsResponse.getData().stream()
+                .map(author -> new DropdownOptionResponse(author.getId(), author.getAuthorName()))
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(HttpStatus.OK.value(), "Lấy danh sách tác giả thành công", dropdown);
     }
 }

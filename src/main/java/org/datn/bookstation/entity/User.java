@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
 
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
+@ToString
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "\"user\"")
@@ -23,15 +25,13 @@ public class User {
     private Integer id;
 
     @Size(max = 100)
-    @NotNull
     @Nationalized
-    @Column(name = "email", nullable = false, length = 100)
+    @Column(name = "email", length = 100)
     private String email;
 
     @Size(max = 255)
-    @NotNull
     @Nationalized
-    @Column(name = "password", nullable = false)
+    @Column(name = "password", nullable = true)
     private String password;
 
     @NotNull
@@ -40,9 +40,8 @@ public class User {
     private Role role;
 
     @Size(max = 100)
-    @NotNull
     @Nationalized
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = true, length = 100)
     private String fullName;
 
     @Size(max = 20)
@@ -66,8 +65,16 @@ public class User {
     @Column(name = "total_point")
     private Integer totalPoint;
 
+    @ColumnDefault("0")
+    @Column(name = "email_verified")
+    private Byte emailVerified;
+
     @Column(name = "total_spent", precision = 10, scale = 2)
     private BigDecimal totalSpent;
+
+    @ColumnDefault("0")
+    @Column(name = "isRetail")
+    private Byte isRetail;
 
     @PrePersist
     protected void onCreate() {

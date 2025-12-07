@@ -34,10 +34,6 @@ public class DataInitializationService implements CommandLineRunner {
     private final UserVoucherRepository userVoucherRepository;
     private final FlashSaleRepository flashSaleRepository;
     private final FlashSaleItemRepository flashSaleItemRepository;
-    private final EventCategoryRepository eventCategoryRepository;
-    private final EventRepository eventRepository;
-    private final EventGiftRepository eventGiftRepository;
-    private final EventParticipantRepository eventParticipantRepository;
     private final AddressRepository addressRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
@@ -45,10 +41,13 @@ public class DataInitializationService implements CommandLineRunner {
     private final OrderDetailRepository orderDetailRepository;
     private final PointRepository pointRepository;
     private final ReviewRepository reviewRepository;
+    private final CampaignRepository campaignRepository;
+    private final RewardRepository rewardRepository;
+    private final UserCampaignRepository userCampaignRepository;
+    private final BoxHistoryRepository boxHistoryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
     public void run(String... args) {
         try {
             log.info("Starting data initialization...");
@@ -62,6 +61,7 @@ public class DataInitializationService implements CommandLineRunner {
             log.info("Data initialization completed successfully!");
         } catch (Exception e) {
             log.error("Error during data initialization: ", e);
+            // Don't rethrow to prevent application startup failure
         }
     }
 
@@ -157,33 +157,13 @@ public class DataInitializationService implements CommandLineRunner {
             log.info("Flash sales already exist, skipping initialization.");
         }
 
-        // Kiểm tra và khởi tạo EventCategories
-        if (eventCategoryRepository.count() == 0) {
-            initializeEventCategories();
-        } else {
-            log.info("Event categories already exist, skipping initialization.");
-        }
-
-        // Kiểm tra và khởi tạo Events
-        if (eventRepository.count() == 0) {
-            initializeEvents();
-        } else {
-            log.info("Events already exist, skipping initialization.");
-        }
-
-        // Kiểm tra và khởi tạo EventGifts
-        if (eventGiftRepository.count() == 0) {
-            initializeEventGifts();
-        } else {
-            log.info("Event gifts already exist, skipping initialization.");
-        }
-
-        // Kiểm tra và khởi tạo Addresses
-        if (addressRepository.count() == 0) {
-            initializeAddresses();
-        } else {
-            log.info("Addresses already exist, skipping initialization.");
-        }
+        // Kiểm tra và khởi tạo Addresses - DISABLED
+        // if (addressRepository.count() == 0) {
+        //     initializeAddresses();
+        // } else {
+        //     log.info("Addresses already exist, skipping initialization.");
+        // }
+        log.info("Address initialization is disabled - no address data will be created.");
 
         // Kiểm tra và khởi tạo Carts
         if (cartRepository.count() == 0) {
@@ -192,50 +172,64 @@ public class DataInitializationService implements CommandLineRunner {
             log.info("Carts already exist, skipping initialization.");
         }
 
-        // Kiểm tra và khởi tạo Orders
-        if (orderRepository.count() == 0) {
-            initializeOrders();
-            initializeTrendingOrderData(); // ✅ THÊM: Tạo thêm dữ liệu cho trending
-        } else {
-            log.info("Orders already exist, skipping initialization.");
-        }
+        // Kiểm tra và khởi tạo Orders - DISABLED
+        // if (orderRepository.count() == 0) {
+        //     initializeOrders();
+        //     initializeTrendingOrderData(); // ✅ THÊM: Tạo thêm dữ liệu cho trending
+        //     
+        //     // ✅ THÊM: Tạo dữ liệu đơn hàng test theo thời gian cho Lê Văn C (chỉ khi chưa có đơn hàng nào)
+        //     initializeTestOrdersForLeVanC();
+        // } else {
+        //     log.info("Orders already exist, skipping initialization.");
+        // }
+        log.info("Order initialization is disabled - no order data will be created.");
 
-        // Kiểm tra và khởi tạo Points
-        if (pointRepository.count() == 0) {
-            initializePoints();
-        } else {
-            log.info("Points already exist, skipping initialization.");
-        }
+        // Kiểm tra và khởi tạo Points - DISABLED (vì không có order)
+        // if (pointRepository.count() == 0) {
+        //     initializePoints(); // Tạm thời skip để test phần khác trước
+        // } else {
+        //     log.info("Points already exist, skipping initialization.");
+        // }
+        log.info("Points initialization is disabled - requires orders to exist first.");
 
-        // Kiểm tra và khởi tạo Reviews
-        if (reviewRepository.count() == 0) {
-            initializeReviews();
-            initializeTrendingReviewData(); // ✅ THÊM: Tạo thêm review cho trending
+        // Kiểm tra và khởi tạo Reviews - DISABLED
+        // if (reviewRepository.count() == 0) {
+        //     initializeReviews();
+        //     initializeTrendingReviewData(); // ✅ THÊM: Tạo thêm review cho trending
+        // } else {
+        //     log.info("Reviews already exist, skipping initialization.");
+        // }
+        log.info("Review initialization is disabled - no review data will be created.");
+        
+        // ===== 🎮 MINIGAME INITIALIZATION =====
+        // Kiểm tra và khởi tạo Campaigns
+        if (campaignRepository.count() == 0) {
+            initializeCampaigns();
         } else {
-            log.info("Reviews already exist, skipping initialization.");
+            log.info("Campaigns already exist, skipping initialization.");
         }
-
-        // Kiểm tra và khởi tạo EventParticipants
-        if (eventParticipantRepository.count() == 0) {
-            initializeEventParticipants();
+        
+        // Kiểm tra và khởi tạo Rewards
+        if (rewardRepository.count() == 0) {
+            initializeRewards();
         } else {
-            log.info("Event participants already exist, skipping initialization.");
+            log.info("Rewards already exist, skipping initialization.");
         }
     }
 
     private void initializeRoles() {
         log.info("Initializing roles...");
         List<Role> roles = Arrays.asList(
-            createRole("ADMIN", "Quản trị viên hệ thống"),
-            createRole("STAFF", "Nhân viên"),
-            createRole("CUSTOMER", "Khách hàng")
+            createRole(RoleName.ADMIN, "Quản trị viên hệ thống"),
+            createRole(RoleName.STAFF, "Nhân viên"),
+            createRole(RoleName.CUSTOMER, "Khách hàng")
         );
         roleRepository.saveAll(roles);
     }
 
-    private Role createRole(String name, String description) {
+    private Role createRole(RoleName roleName, String description) {
         Role role = new Role();
-        role.setRoleName(name);
+        role.setRoleName(roleName);
         role.setDescription(description);
         role.setStatus((byte) 1);
         return role;
@@ -263,23 +257,191 @@ public class DataInitializationService implements CommandLineRunner {
 
     private void initializeUsers() {
         log.info("Initializing users...");
-        Role adminRole = roleRepository.findByRoleName("ADMIN").orElse(null);
-        Role staffRole = roleRepository.findByRoleName("STAFF").orElse(null);
-        Role customerRole = roleRepository.findByRoleName("CUSTOMER").orElse(null);
+        Role adminRole = roleRepository.findByRoleName(RoleName.ADMIN).orElse(null);
+        Role customerRole = roleRepository.findByRoleName(RoleName.CUSTOMER).orElse(null);
 
         List<User> users = Arrays.asList(
             createUser("admin@bookstation.com", "admin123", "Admin BookStation", adminRole),
-            createUser("staff1@bookstation.com", "staff123", "Nguyễn Văn A", staffRole),
-            createUser("staff2@bookstation.com", "staff123", "Trần Thị B", staffRole),
-            createUser("customer1@gmail.com", "customer123", "Lê Văn C", customerRole),
-            createUser("customer2@gmail.com", "customer123", "Phạm Thị D", customerRole),
-            createUser("customer3@gmail.com", "customer123", "Hoàng Văn E", customerRole),
-            createUser("customer4@gmail.com", "customer123", "Ngô Thị F", customerRole),
-            createUser("customer5@gmail.com", "customer123", "Vũ Văn G", customerRole)
+            createUser("customer1@gmail.com", "customer123", "Lê Văn C", customerRole)
         );
         userRepository.saveAll(users);
     }
 
+    /**
+     * Tạo và gán nhiều loại voucher cho user Lê Văn C để test đủ trường hợp
+     */
+    private void addTestVouchersForLeVanC() {
+        User leVanC = userRepository.findByEmail("customer1@gmail.com").orElse(null);
+        if (leVanC == null) return;
+
+        long now = System.currentTimeMillis();
+        long oneMonth = 30L * 24 * 60 * 60 * 1000;
+        List<Voucher> vouchersToAdd = new java.util.ArrayList<>();
+
+        // 5 voucher miễn phí vận chuyển (FREESHIP)
+        for (int i = 1; i <= 5; i++) {
+            vouchersToAdd.add(createVoucher(
+                "FREESHIP" + i,
+                "Miễn phí vận chuyển",
+                "Voucher miễn phí vận chuyển cho đơn bất kỳ",
+                VoucherCategory.SHIPPING,
+                DiscountType.FIXED_AMOUNT,
+                null,
+                new BigDecimal("30000"), // Giảm tối đa 30k tiền ship
+                now,
+                now + oneMonth,
+                BigDecimal.ZERO,
+                new BigDecimal("30000"),
+                1,
+                1,
+                "admin"
+            ));
+        }
+
+        // 5 voucher giảm 20k tiền ship cho đơn từ 50k
+        for (int i = 1; i <= 5; i++) {
+            vouchersToAdd.add(createVoucher(
+                "SHIP20K" + i,
+                "Giảm 20K tiền ship",
+                "Giảm 20.000đ phí vận chuyển cho đơn từ 50.000đ",
+                VoucherCategory.SHIPPING,
+                DiscountType.FIXED_AMOUNT,
+                null,
+                new BigDecimal("20000"),
+                now,
+                now + oneMonth,
+                new BigDecimal("50000"),
+                new BigDecimal("20000"),
+                1,
+                1,
+                "admin"
+            ));
+        }
+
+        // 5 voucher thường giảm 40k cho đơn từ 100k
+        for (int i = 1; i <= 5; i++) {
+            vouchersToAdd.add(createVoucher(
+                "SALE40K" + i,
+                "Giảm 40K cho đơn từ 100K",
+                "Giảm 40.000đ cho đơn hàng từ 100.000đ",
+                VoucherCategory.NORMAL,
+                DiscountType.FIXED_AMOUNT,
+                null,
+                new BigDecimal("40000"),
+                now,
+                now + oneMonth,
+                new BigDecimal("100000"),
+                new BigDecimal("40000"),
+                1,
+                1,
+                "admin"
+            ));
+        }
+
+        // 5 voucher giảm theo % đơn hàng (10%, 15%, 20%, 25%, 30%)
+        int[] percents = {10, 15, 20, 25, 30};
+        for (int i = 0; i < percents.length; i++) {
+            vouchersToAdd.add(createVoucher(
+                "SALE" + percents[i] + "PCT",
+                "Giảm " + percents[i] + "%",
+                "Giảm " + percents[i] + "% tối đa " + (percents[i] * 1000) + "đ cho đơn từ " + (percents[i] * 10000) + "đ",
+                VoucherCategory.NORMAL,
+                DiscountType.PERCENTAGE,
+                new BigDecimal(percents[i]),
+                null,
+                now,
+                now + oneMonth,
+                new BigDecimal(percents[i] * 10000),
+                new BigDecimal(percents[i] * 1000),
+                1,
+                1,
+                "admin"
+            ));
+        }
+
+        // Shopee style: các voucher đặc biệt
+        vouchersToAdd.add(createVoucher(
+            "WELCOME",
+            "Voucher chào mừng đặc biệt",
+            "Giảm 15% tối đa 50.000đ cho đơn từ 100.000đ - Voucher chào mừng thành viên mới",
+            VoucherCategory.NORMAL,
+            DiscountType.PERCENTAGE,
+            new BigDecimal("15"),
+            null,
+            now,
+            now + oneMonth,
+            new BigDecimal("100000"),
+            new BigDecimal("50000"),
+            1,
+            1,
+            "admin"
+        ));
+
+        vouchersToAdd.add(createVoucher(
+            "FLASHSALE50K",
+            "Flash Sale Giảm 50K",
+            "Giảm 50.000đ cho đơn từ 300.000đ, chỉ áp dụng trong khung giờ vàng",
+            VoucherCategory.NORMAL,
+            DiscountType.FIXED_AMOUNT,
+            null,
+            new BigDecimal("50000"),
+            now,
+            now + (3L * 24 * 60 * 60 * 1000), // 3 ngày
+            new BigDecimal("300000"),
+            new BigDecimal("50000"),
+            1,
+            1,
+            "admin"
+        ));
+
+        vouchersToAdd.add(createVoucher(
+            "NEWUSER100K",
+            "Giảm 100K cho khách mới",
+            "Giảm 100.000đ cho đơn từ 500.000đ, chỉ cho khách mới",
+            VoucherCategory.NORMAL,
+            DiscountType.FIXED_AMOUNT,
+            null,
+            new BigDecimal("100000"),
+            now,
+            now + oneMonth,
+            new BigDecimal("500000"),
+            new BigDecimal("100000"),
+            1,
+            1,
+            "admin"
+        ));
+
+        vouchersToAdd.add(createVoucher(
+            "SHIPMAX",
+            "Miễn phí ship tối đa 50K",
+            "Miễn phí vận chuyển tối đa 50.000đ cho đơn từ 200.000đ",
+            VoucherCategory.SHIPPING,
+            DiscountType.FIXED_AMOUNT,
+            null,
+            new BigDecimal("50000"),
+            now,
+            now + oneMonth,
+            new BigDecimal("200000"),
+            new BigDecimal("50000"),
+            1,
+            1,
+            "admin"
+        ));
+
+        // Lưu voucher vào DB
+        voucherRepository.saveAll(vouchersToAdd);
+
+        // Gán cho user Lê Văn C
+        for (Voucher v : vouchersToAdd) {
+            for (int i = 0; i < v.getUsageLimitPerUser(); i++) {
+                UserVoucher uv = new UserVoucher();
+                uv.setUser(leVanC);
+                uv.setVoucher(v);
+                uv.setUsedCount(0);
+                userVoucherRepository.save(uv);
+            }
+        }
+    }
     private User createUser(String email, String password, String fullName, Role role) {
         User user = new User();
         user.setEmail(email);
@@ -295,7 +457,7 @@ public class DataInitializationService implements CommandLineRunner {
 
     private void initializeUserRanks() {
         log.info("Initializing user ranks...");
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         Rank goldRank = rankRepository.findByRankName("VÀNG").orElse(null);
         for (int i = 0; i < Math.min(3, customers.size()); i++) {
             User customer = customers.get(i);
@@ -515,6 +677,8 @@ public class DataInitializationService implements CommandLineRunner {
         book.setCreatedBy(createdBy);
         book.setBookCode("BOOK" + System.currentTimeMillis());
         book.setStatus((byte) 1);
+        // Thêm dữ liệu mẫu cho images (nhiều ảnh, cách nhau bằng dấu phẩy)
+        book.setImages("https://yourdomain.com/uploads/products/sample1.jpg,https://yourdomain.com/uploads/products/sample2.jpg");
         return book;
     }
 
@@ -583,26 +747,17 @@ public class DataInitializationService implements CommandLineRunner {
         long oneMonth = 30L * 24 * 60 * 60 * 1000; // 30 ngày
         
         List<Voucher> vouchers = Arrays.asList(
-            createVoucher("WELCOME10", "Voucher chào mừng", "Giảm 10% cho đơn hàng đầu tiên", 
-                VoucherType.PERCENTAGE, new BigDecimal("10"), null, 
-                currentTime, currentTime + oneMonth, new BigDecimal("100000"), new BigDecimal("50000"), 100, 1, "admin"),
-            createVoucher("SAVE50K", "Voucher giảm 50K", "Giảm 50.000đ cho đơn từ 500K", 
-                VoucherType.FIXED_AMOUNT, null, new BigDecimal("50000"), 
-                currentTime, currentTime + oneMonth, new BigDecimal("500000"), null, 50, 1, "admin"),
-            createVoucher("FREESHIP", "Miễn phí vận chuyển", "Miễn phí ship cho đơn từ 200K", 
-                VoucherType.FREE_SHIPPING, null, null, 
-                currentTime, currentTime + oneMonth, new BigDecimal("200000"), null, 200, 1, "admin"),
-            createVoucher("SUMMER20", "Voucher hè", "Giảm 20% tối đa 100K", 
-                VoucherType.PERCENTAGE, new BigDecimal("20"), null, 
-                currentTime, currentTime + oneMonth, new BigDecimal("300000"), new BigDecimal("100000"), 75, 1, "admin"),
-            createVoucher("NEWBIE15", "Voucher thành viên mới", "Giảm 15% cho khách hàng mới", 
-                VoucherType.PERCENTAGE, new BigDecimal("15"), null, 
-                currentTime, currentTime + oneMonth, new BigDecimal("150000"), new BigDecimal("75000"), 150, 1, "admin")
+            createVoucher("FREESHIP", "Giảm phí vận chuyển", "Giảm 10K phí vận chuyển cho đơn từ 0đ", 
+                VoucherCategory.SHIPPING, DiscountType.FIXED_AMOUNT, null, new BigDecimal("10000"), 
+                currentTime, currentTime + oneMonth, BigDecimal.ZERO, new BigDecimal("10000"), 100, 1, "admin"),
+            createVoucher("SAVE50K", "Voucher giảm 50K", "Giảm 50.000đ cho đơn từ 0đ", 
+                VoucherCategory.NORMAL, DiscountType.FIXED_AMOUNT, null, new BigDecimal("50000"), 
+                currentTime, currentTime + oneMonth, BigDecimal.ZERO, null, 50, 1, "admin")
         );
         voucherRepository.saveAll(vouchers);
     }
 
-    private Voucher createVoucher(String code, String name, String description, VoucherType type,
+    private Voucher createVoucher(String code, String name, String description, VoucherCategory category, DiscountType discountType,
                                 BigDecimal discountPercentage, BigDecimal discountAmount,
                                 Long startTime, Long endTime, BigDecimal minOrderValue, 
                                 BigDecimal maxDiscountValue, Integer usageLimit, 
@@ -611,7 +766,8 @@ public class DataInitializationService implements CommandLineRunner {
         voucher.setCode(code);
         voucher.setName(name);
         voucher.setDescription(description);
-        voucher.setVoucherType(type);
+        voucher.setVoucherCategory(category);
+        voucher.setDiscountType(discountType);
         voucher.setDiscountPercentage(discountPercentage);
         voucher.setDiscountAmount(discountAmount);
         voucher.setStartTime(startTime);
@@ -629,7 +785,7 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeUserVouchers() {
         log.info("Initializing user vouchers...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Voucher> vouchers = voucherRepository.findAll();
         
         // Gán một số voucher cho khách hàng
@@ -677,113 +833,14 @@ public class DataInitializationService implements CommandLineRunner {
         }
     }
 
-    private void initializeEventCategories() {
-        log.info("Initializing event categories...");
-        
-        List<EventCategory> eventCategories = Arrays.asList(
-            createEventCategory("Sự kiện sách", "Các sự kiện liên quan đến sách", "📚"),
-            createEventCategory("Gặp gỡ tác giả", "Sự kiện gặp gỡ tác giả", "👨‍💼"),
-            createEventCategory("Khuyến mãi", "Sự kiện khuyến mãi đặc biệt", "🎉"),
-            createEventCategory("Thử thách đọc", "Thử thách đọc sách", "🏆"),
-            createEventCategory("Hội thảo", "Các hội thảo về sách", "💼")
-        );
-        eventCategoryRepository.saveAll(eventCategories);
-    }
-
-    private EventCategory createEventCategory(String name, String description, String icon) {
-        EventCategory category = new EventCategory();
-        category.setCategoryName(name);
-        category.setDescription(description);
-        category.setIconUrl(icon);
-        category.setIsActive(true);
-        return category;
-    }
-
-    private void initializeEvents() {
-        log.info("Initializing events...");
-        
-        List<EventCategory> categories = eventCategoryRepository.findAll();
-        List<User> users = userRepository.findAll();
-        
-        long currentTime = System.currentTimeMillis();
-        long oneWeek = 7L * 24 * 60 * 60 * 1000;
-        long oneMonth = 30L * 24 * 60 * 60 * 1000;
-        
-        List<Event> events = Arrays.asList(
-            createEvent("Ra mắt sách mới tháng 7", "Sự kiện ra mắt các đầu sách mới trong tháng", 
-                EventType.BOOK_LAUNCH, categories.get(0), EventStatus.ONGOING, 
-                currentTime, currentTime + oneWeek, 50, "BookStation HN", false, users.get(0)),
-            createEvent("Gặp gỡ Nguyễn Nhật Ánh", "Buổi gặp gỡ và ký tặng sách với tác giả Nguyễn Nhật Ánh", 
-                EventType.AUTHOR_MEET, categories.get(1), EventStatus.PUBLISHED, 
-                currentTime + oneWeek, currentTime + oneWeek * 2, 100, "BookStation HCM", false, users.get(1)),
-            createEvent("Thử thách đọc sách mùa hè", "Thử thách đọc 10 cuốn sách trong mùa hè", 
-                EventType.READING_CHALLENGE, categories.get(3), EventStatus.ONGOING, 
-                currentTime, currentTime + oneMonth * 2, 200, "Online", true, users.get(0)),
-            createEvent("Flash Sale sách kinh tế", "Giảm giá sâu các đầu sách kinh tế", 
-                EventType.PROMOTION, categories.get(2), EventStatus.ONGOING, 
-                currentTime, currentTime + oneWeek * 2, null, "Online", true, users.get(1)),
-            createEvent("Hội thảo xu hướng đọc 2025", "Thảo luận về xu hướng đọc sách năm 2025", 
-                EventType.WORKSHOP, categories.get(4), EventStatus.PUBLISHED, 
-                currentTime + oneWeek * 3, currentTime + oneWeek * 3 + 24 * 60 * 60 * 1000, 80, "BookStation HN", false, users.get(0))
-        );
-        eventRepository.saveAll(events);
-    }
-
-    private Event createEvent(String name, String description, EventType type, EventCategory category,
-                             EventStatus status, Long startDate, Long endDate, Integer maxParticipants, 
-                             String location, Boolean isOnline, User createdBy) {
-        Event event = new Event();
-        event.setEventName(name);
-        event.setDescription(description);
-        event.setEventType(type);
-        event.setEventCategory(category);
-        event.setStatus(status);
-        event.setStartDate(startDate);
-        event.setEndDate(endDate);
-        event.setMaxParticipants(maxParticipants);
-        event.setCurrentParticipants(0);
-        event.setLocation(location);
-        event.setIsOnline(isOnline);
-        event.setCreatedBy(createdBy);
-        return event;
-    }
-
-    private void initializeEventGifts() {
-        log.info("Initializing event gifts...");
-        
-        List<Event> events = eventRepository.findAll();
-        List<Book> books = bookRepository.findAll();
-        List<Voucher> vouchers = voucherRepository.findAll();
-        
-        for (Event event : events) {
-            // Tạo gift cho mỗi event
-            EventGift bookGift = createEventGift(event, "Sách miễn phí", 
-                "Nhận 1 cuốn sách miễn phí", new BigDecimal("100000"), 10, books.get(0), null);
-            EventGift voucherGift = createEventGift(event, "Voucher giảm giá", 
-                "Voucher giảm 20%", new BigDecimal("50000"), 20, null, vouchers.get(0));
-            
-            eventGiftRepository.saveAll(Arrays.asList(bookGift, voucherGift));
-        }
-    }
-
-    private EventGift createEventGift(Event event, String name, String description, 
-                                     BigDecimal value, Integer quantity, Book book, Voucher voucher) {
-        EventGift gift = new EventGift();
-        gift.setEvent(event);
-        gift.setGiftName(name);
-        gift.setDescription(description);
-        gift.setGiftValue(value);
-        gift.setQuantity(quantity);
-        gift.setRemainingQuantity(quantity);
-        gift.setBook(book);
-        gift.setVoucher(voucher);
-        return gift;
-    }
-
+    // ============== DISABLED ADDRESS INITIALIZATION METHODS ==============
+    // These methods are commented out to prevent automatic address data creation
+    
+    /*
     private void initializeAddresses() {
         log.info("Initializing addresses...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         
         for (int i = 0; i < customers.size(); i++) {
             User customer = customers.get(i);
@@ -806,11 +863,12 @@ public class DataInitializationService implements CommandLineRunner {
         address.setStatus((byte) 1);
         return address;
     }
+    */
 
     private void initializeCarts() {
         log.info("Initializing carts...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Book> books = bookRepository.findAll();
         
         for (User customer : customers) {
@@ -828,18 +886,24 @@ public class DataInitializationService implements CommandLineRunner {
                 item.setQuantity(i + 1);
                 item.setCreatedBy(customer.getId());
                 item.setStatus((byte) 1);
+                item.setSelected(true);
                 cartItemRepository.save(item);
             }
         }
     }
 
+    // ============== DISABLED ORDER INITIALIZATION METHODS ==============
+    // These methods are commented out to prevent automatic order data creation
+    
+    /*
     private void initializeOrders() {
         log.info("Initializing orders...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Book> books = bookRepository.findAll();
         List<Address> addresses = addressRepository.findAll();
         
+        // Tạo đơn hàng DELIVERED cho 3 khách hàng đầu
         for (int i = 0; i < Math.min(3, customers.size()); i++) {
             User customer = customers.get(i);
             Address address = addresses.stream()
@@ -868,8 +932,65 @@ public class DataInitializationService implements CommandLineRunner {
             order.setTotalAmount(subtotal.add(order.getShippingFee()));
             orderRepository.save(order);
         }
+        
+        // ✅ THÊM MỚI: Tạo đơn hàng với các trạng thái hoàn hàng để test
+        if (customers.size() >= 2 && books.size() >= 2) {
+            User testCustomer = customers.get(0); // Lê Văn C (customer1@gmail.com)
+            Address testAddress = addresses.stream()
+                    .filter(addr -> addr.getUser().equals(testCustomer))
+                    .findFirst()
+                    .orElse(addresses.get(0));
+            
+            // 1. Đơn hàng đang chờ admin xem xét yêu cầu hoàn trả
+            Order refundRequestedOrder = createOrder(testCustomer, testAddress, OrderStatus.REFUND_REQUESTED, "ONLINE");
+            refundRequestedOrder.setCancelReason("Khách hàng yêu cầu hoàn trả vì sản phẩm không đúng mô tả");
+            orderRepository.save(refundRequestedOrder);
+            
+            // Thêm order details cho đơn REFUND_REQUESTED
+            Book book1 = books.get(0);
+            OrderDetail detail1 = createOrderDetail(refundRequestedOrder, book1, 2, book1.getPrice());
+            orderDetailRepository.save(detail1);
+            
+            BigDecimal subtotal1 = book1.getPrice().multiply(BigDecimal.valueOf(2));
+            refundRequestedOrder.setSubtotal(subtotal1);
+            refundRequestedOrder.setTotalAmount(subtotal1.add(refundRequestedOrder.getShippingFee()));
+            orderRepository.save(refundRequestedOrder);
+            
+            // 2. Đơn hàng đang trong quá trình hoàn tiền
+            Order refundingOrder = createOrder(testCustomer, testAddress, OrderStatus.REFUNDING, "ONLINE");
+            refundingOrder.setCancelReason("Admin đã chấp nhận yêu cầu hoàn trả, đang xử lý hoàn tiền");
+            orderRepository.save(refundingOrder);
+            
+            // Thêm order details cho đơn REFUNDING
+            Book book2 = books.get(1);
+            OrderDetail detail2 = createOrderDetail(refundingOrder, book2, 1, book2.getPrice());
+            orderDetailRepository.save(detail2);
+            
+            BigDecimal subtotal2 = book2.getPrice();
+            refundingOrder.setSubtotal(subtotal2);
+            refundingOrder.setTotalAmount(subtotal2.add(refundingOrder.getShippingFee()));
+            orderRepository.save(refundingOrder);
+            
+            // 3. Đơn hàng đã hoàn tiền hoàn tất
+            Order refundedOrder = createOrder(testCustomer, testAddress, OrderStatus.REFUNDED, "ONLINE");
+            refundedOrder.setCancelReason("Đã hoàn trả thành công cho khách hàng");
+            orderRepository.save(refundedOrder);
+            
+            // Thêm order details cho đơn REFUNDED
+            Book book3 = books.size() > 2 ? books.get(2) : books.get(0);
+            OrderDetail detail3 = createOrderDetail(refundedOrder, book3, 1, book3.getPrice());
+            orderDetailRepository.save(detail3);
+            
+            BigDecimal subtotal3 = book3.getPrice();
+            refundedOrder.setSubtotal(subtotal3);
+            refundedOrder.setTotalAmount(subtotal3.add(refundedOrder.getShippingFee()));
+            orderRepository.save(refundedOrder);
+            
+            log.info("Created test orders with refund statuses: REFUND_REQUESTED, REFUNDING, REFUNDED");
+        }
     }
 
+    /*
     private Order createOrder(User customer, Address address, OrderStatus status, String orderType) {
         Order order = new Order();
         order.setUser(customer);
@@ -901,7 +1022,9 @@ public class DataInitializationService implements CommandLineRunner {
         detail.setCreatedBy(order.getCreatedBy());
         return detail;
     }
+    */
 
+    @Transactional
     private void initializePoints() {
         log.info("Initializing points...");
         
@@ -912,7 +1035,9 @@ public class DataInitializationService implements CommandLineRunner {
                 Point point = new Point();
                 point.setUser(order.getUser());
                 point.setOrder(order);
-                point.setPointEarned((int) (order.getTotalAmount().doubleValue() / 1000)); // 1 điểm / 1000đ
+                // Giới hạn điểm tối đa 100 điểm mỗi đơn hàng để tránh overflow
+                int pointsToEarn = Math.min(100, (int) (order.getTotalAmount().doubleValue() / 1000)); 
+                point.setPointEarned(pointsToEarn);
                 point.setMinSpent(order.getTotalAmount());
                 point.setPointSpent(0);
                 point.setDescription("Tích điểm từ đơn hàng " + order.getCode());
@@ -920,11 +1045,21 @@ public class DataInitializationService implements CommandLineRunner {
                 point.setStatus((byte) 1);
                 pointRepository.save(point);
                 
-                // Cập nhật tổng điểm cho user
-                User user = order.getUser();
-                user.setTotalPoint((user.getTotalPoint() != null ? user.getTotalPoint() : 0) + point.getPointEarned());
-                user.setTotalSpent((user.getTotalSpent() != null ? user.getTotalSpent() : BigDecimal.ZERO).add(order.getTotalAmount()));
-                userRepository.save(user);
+                // Cập nhật tổng điểm cho user - fetch user explicitly to avoid lazy loading
+                User user = userRepository.findById(order.getUser().getId()).orElse(null);
+                if (user != null) {
+                    int currentTotalPoint = user.getTotalPoint() != null ? user.getTotalPoint() : 0;
+                    int newTotalPoint = Math.min(999999, currentTotalPoint + pointsToEarn); // Giới hạn tổng điểm < 1 triệu
+                    user.setTotalPoint(newTotalPoint);
+                    
+                    BigDecimal currentTotalSpent = user.getTotalSpent() != null ? user.getTotalSpent() : BigDecimal.ZERO;
+                    BigDecimal newTotalSpent = currentTotalSpent.add(order.getTotalAmount());
+                    // Giới hạn tổng chi tiêu < 100 triệu để tránh overflow
+                    if (newTotalSpent.compareTo(new BigDecimal("99999999")) <= 0) {
+                        user.setTotalSpent(newTotalSpent);
+                    }
+                    userRepository.save(user);
+                }
             }
         }
     }
@@ -932,52 +1067,79 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeReviews() {
         log.info("Initializing reviews...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Book> books = bookRepository.findAll();
         
-        String[] comments = {
+        String[] positiveComments = {
             "Sách rất hay, nội dung hấp dẫn!",
             "Chất lượng tốt, giao hàng nhanh.",
             "Nội dung phong phú, đáng đọc.",
             "Sách in đẹp, giá cả hợp lý.",
-            "Rất hài lòng với sản phẩm này."
+            "Rất hài lòng với sản phẩm này.",
+            "Đọc xong thấy rất bổ ích!",
+            "Recommend cho mọi người!",
+            "Tác giả viết rất hay và dễ hiểu."
         };
         
-        for (int i = 0; i < Math.min(customers.size(), books.size()); i++) {
-            Review review = Review.builder()
-                    .book(books.get(i))
-                    .user(customers.get(i))
-                    .rating(4 + (i % 2)) // Rating 4 hoặc 5
-                    .comment(comments[i % comments.length])
-                    .reviewDate(System.currentTimeMillis())
-                    .reviewStatus(ReviewStatus.APPROVED)
-                    .build();
-            reviewRepository.save(review);
-        }
-    }
-
-    private void initializeEventParticipants() {
-        log.info("Initializing event participants...");
+        String[] negativeComments = {
+            "Nội dung không như mong đợi.",
+            "Giao hàng hơi chậm.",
+            "Chất lượng bình thường thôi.",
+            "Giá hơi cao so với chất lượng."
+        };
         
-        List<Event> events = eventRepository.findAll();
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
-        
-        for (Event event : events) {
-            // Thêm một số participant cho mỗi event
-            for (int i = 0; i < Math.min(3, customers.size()); i++) {
-                EventParticipant participant = new EventParticipant();
-                participant.setEvent(event);
-                participant.setUser(customers.get(i));
-                participant.setJoinedAt(System.currentTimeMillis());
-                participant.setIsWinner(i == 0); // Participant đầu tiên là winner
-                participant.setCompletionStatus(ParticipantStatus.COMPLETED);
-                participant.setNotes("Tham gia sự kiện " + event.getEventName());
-                eventParticipantRepository.save(participant);
-            }
+        // Tạo review cho từng sách với tỉ lệ tích cực khác nhau
+        for (int bookIndex = 0; bookIndex < books.size(); bookIndex++) {
+            Book book = books.get(bookIndex);
             
-            // Cập nhật số lượng participant hiện tại
-            event.setCurrentParticipants(Math.min(3, customers.size()));
-            eventRepository.save(event);
+            // Tạo 3-6 review cho mỗi sách để có đủ dữ liệu test (không phụ thuộc số customers)
+            int reviewCount = 3 + (bookIndex % 4); // 3-6 reviews
+            
+            for (int i = 0; i < reviewCount; i++) {
+                // Sử dụng customers theo kiểu circular để đảm bảo mọi sách đều có review
+                User customer = customers.get(i % customers.size());
+                
+                // Tỉ lệ tích cực khác nhau cho từng sách để test API
+                boolean isPositive;
+                int rating;
+                String comment;
+                
+                // ✅ ĐẶC BIỆT: Marketing 4.0 có 100% đánh giá tích cực
+                if (book.getBookName().equals("Marketing 4.0")) {
+                    isPositive = true; // 100% tích cực
+                    rating = 5; // Tất cả đều 5 sao
+                    comment = positiveComments[i % positiveComments.length];
+                } else if (bookIndex < 7) {
+                    // 7 sách đầu có tỉ lệ tích cực cao (>= 75%)
+                    isPositive = (i < reviewCount * 0.85); // 85% tích cực
+                    rating = isPositive ? (4 + (i % 2)) : (2 + (i % 2)); // 4-5 hoặc 2-3
+                    comment = isPositive ? positiveComments[i % positiveComments.length] 
+                                        : negativeComments[i % negativeComments.length];
+                } else if (bookIndex < 10) {
+                    // 3 sách tiếp theo có tỉ lệ tích cực vừa phải (50-70%)
+                    isPositive = (i < reviewCount * 0.6); // 60% tích cực
+                    rating = isPositive ? (3 + (i % 2)) : (2 + (i % 2)); // 3-4 hoặc 2-3
+                    comment = isPositive ? positiveComments[i % positiveComments.length] 
+                                        : negativeComments[i % negativeComments.length];
+                } else {
+                    // Sách còn lại có tỉ lệ tích cực thấp (<50%)
+                    isPositive = (i < reviewCount * 0.3); // 30% tích cực
+                    rating = isPositive ? (3 + (i % 2)) : (1 + (i % 2)); // 3-4 hoặc 1-2
+                    comment = isPositive ? positiveComments[i % positiveComments.length] 
+                                        : negativeComments[i % negativeComments.length];
+                }
+                
+                Review review = Review.builder()
+                        .book(book)
+                        .user(customer)
+                        .rating(rating)
+                        .comment(comment)
+                        .isPositive(isPositive) // ✅ THÊM: Thiết lập isPositive
+                        .reviewDate(System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)) // Tạo thời gian khác nhau
+                        .reviewStatus(ReviewStatus.APPROVED)
+                        .build();
+                reviewRepository.save(review);
+            }
         }
     }
 
@@ -991,7 +1153,6 @@ public class DataInitializationService implements CommandLineRunner {
         
         try {
             // Xóa dữ liệu theo thứ tự dependency (từ con đến cha)
-            eventParticipantRepository.deleteAll();
             reviewRepository.deleteAll();
             pointRepository.deleteAll();
             orderDetailRepository.deleteAll();
@@ -999,9 +1160,6 @@ public class DataInitializationService implements CommandLineRunner {
             cartItemRepository.deleteAll();
             cartRepository.deleteAll();
             addressRepository.deleteAll();
-            eventGiftRepository.deleteAll();
-            eventRepository.deleteAll();
-            eventCategoryRepository.deleteAll();
             flashSaleItemRepository.deleteAll();
             flashSaleRepository.deleteAll();
             userVoucherRepository.deleteAll();
@@ -1046,28 +1204,28 @@ public class DataInitializationService implements CommandLineRunner {
         log.info("User Vouchers: {}", userVoucherRepository.count());
         log.info("Flash Sales: {}", flashSaleRepository.count());
         log.info("Flash Sale Items: {}", flashSaleItemRepository.count());
-        log.info("Event Categories: {}", eventCategoryRepository.count());
-        log.info("Events: {}", eventRepository.count());
-        log.info("Event Gifts: {}", eventGiftRepository.count());
-        log.info("Event Participants: {}", eventParticipantRepository.count());
-        log.info("Addresses: {}", addressRepository.count());
+        log.info("Addresses: {} (initialization disabled)", addressRepository.count());
         log.info("Carts: {}", cartRepository.count());
         log.info("Cart Items: {}", cartItemRepository.count());
-        log.info("Orders: {}", orderRepository.count());
-        log.info("Order Details: {}", orderDetailRepository.count());
-        log.info("Points: {}", pointRepository.count());
+        log.info("Orders: {} (initialization disabled)", orderRepository.count());
+        log.info("Order Details: {} (initialization disabled)", orderDetailRepository.count());
+        log.info("Points: {} (initialization disabled)", pointRepository.count());
         log.info("Reviews: {}", reviewRepository.count());
         log.info("========================");
     }
     
+    
+    // ============== DISABLED TRENDING ORDER METHODS ==============
+    /*
     /**
      * ✅ THÊM METHOD: Tạo thêm dữ liệu đơn hàng để có sản phẩm xu hướng
      * Tạo nhiều đơn hàng trong 30 ngày qua với số lượng khác nhau cho các sách
      */
+    /*
     private void initializeTrendingOrderData() {
         log.info("Initializing trending order data...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Book> books = bookRepository.findAll();
         List<Address> addresses = addressRepository.findAll();
         
@@ -1132,7 +1290,9 @@ public class DataInitializationService implements CommandLineRunner {
         
         log.info("Created {} trending orders", Arrays.stream(trendingPattern).sum());
     }
+    */
     
+    /*
     /**
      * Tạo Order với thời gian tùy chỉnh cho trending data
      */
@@ -1155,14 +1315,15 @@ public class DataInitializationService implements CommandLineRunner {
         order.setStatus((byte) 1);
         return order;
     }
-
+    // ============== END DISABLED ORDER METHODS ==============
+    
     /**
      * ✅ THÊM METHOD: Tạo thêm review để có đánh giá cho trending products
      */
     private void initializeTrendingReviewData() {
         log.info("Initializing trending review data...");
         
-        List<User> customers = userRepository.findByRole_RoleName("CUSTOMER");
+        List<User> customers = userRepository.findByRole_RoleName(RoleName.CUSTOMER);
         List<Book> books = bookRepository.findAll();
         
         if (customers.isEmpty() || books.isEmpty()) {
@@ -1217,12 +1378,18 @@ public class DataInitializationService implements CommandLineRunner {
                     rating = (Math.random() < 0.3) ? 4 : ((Math.random() < 0.6) ? 3 : 2); // 30% rating 4, 30% rating 3, 40% rating 2
                 }
                 
-                // Chọn comment phù hợp với rating
+                // Chọn comment phù hợp với rating và xác định isPositive
                 String comment;
+                Boolean isPositive;
                 if (rating >= 4) {
                     comment = positiveComments[(int)(Math.random() * positiveComments.length)];
+                    isPositive = true; // Rating >= 4 được coi là tích cực
+                } else if (rating == 3) {
+                    comment = neutralComments[(int)(Math.random() * neutralComments.length)];
+                    isPositive = Math.random() < 0.5 ? true : false; // Rating 3 có thể tích cực hoặc tiêu cực
                 } else {
                     comment = neutralComments[(int)(Math.random() * neutralComments.length)];
+                    isPositive = false; // Rating <= 2 được coi là tiêu cực
                 }
                 
                 // Random thời gian review trong 30 ngày qua
@@ -1233,6 +1400,7 @@ public class DataInitializationService implements CommandLineRunner {
                         .user(customer)
                         .rating(rating)
                         .comment(comment)
+                        .isPositive(isPositive) // ✅ THÊM: Thiết lập isPositive
                         .reviewDate(reviewTime)
                         .reviewStatus(ReviewStatus.APPROVED)
                         .createdAt(reviewTime)
@@ -1243,5 +1411,270 @@ public class DataInitializationService implements CommandLineRunner {
         }
         
         log.info("Created {} trending reviews", Arrays.stream(reviewPattern).sum());
+    }
+    
+    
+    // ============== DISABLED TEST ORDER METHODS ==============
+    /*
+    /**
+     * ✅ THÊM METHOD: Tạo dữ liệu đơn hàng test theo thời gian cho Lê Văn C 
+     * Mua sách "Đắc Nhân Tâm" từ 2023 đến nay với tần suất khác nhau
+     */
+    /*
+    private void initializeTestOrdersForLeVanC() {
+        log.info("Initializing test orders for Lê Văn C with time-based data...");
+        
+        // Tìm user Lê Văn C
+        User leVanC = userRepository.findByEmail("customer1@gmail.com").orElse(null);
+        if (leVanC == null) {
+            log.warn("Lê Văn C not found, skipping test order creation");
+            return;
+        }
+        
+        // Tìm sách "Đắc Nhân Tâm"
+        Book dacNhanTam = bookRepository.findAll().stream()
+                .filter(book -> book.getBookName().contains("Đắc Nhân Tâm"))
+                .findFirst().orElse(null);
+        if (dacNhanTam == null) {
+            log.warn("Book 'Đắc Nhân Tâm' not found, skipping test order creation");
+            return;
+        }
+        
+        // Tìm địa chỉ của Lê Văn C
+        Address address = addressRepository.findAll().stream()
+                .filter(addr -> addr.getUser().equals(leVanC))
+                .findFirst().orElse(null);
+        if (address == null) {
+            log.warn("Address for Lê Văn C not found, skipping test order creation");
+            return;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        long oneDay = 24L * 60 * 60 * 1000;
+        long oneMonth = 30L * oneDay;
+        long oneYear = 365L * oneDay;
+        
+        // Pattern: Tạo đơn hàng theo các mốc thời gian khác nhau
+        List<OrderTestData> orderPattern = Arrays.asList(
+            // === 2023 - Ít đơn hàng ===
+            new OrderTestData(currentTime - oneYear - 6 * oneMonth, 1), // Tháng 2/2023
+            new OrderTestData(currentTime - oneYear - 3 * oneMonth, 1), // Tháng 5/2023  
+            new OrderTestData(currentTime - oneYear - oneMonth, 2),     // Tháng 7/2023
+            new OrderTestData(currentTime - oneYear, 1),               // Tháng 8/2023
+            
+            // === Q4/2023 - Tăng dần ===
+            new OrderTestData(currentTime - oneYear + oneMonth, 2),    // Tháng 9/2023
+            new OrderTestData(currentTime - oneYear + 2 * oneMonth, 3), // Tháng 10/2023
+            new OrderTestData(currentTime - oneYear + 3 * oneMonth, 2), // Tháng 11/2023
+            new OrderTestData(currentTime - oneYear + 4 * oneMonth, 4), // Tháng 12/2023
+            
+            // === Q1/2024 - Khá tốt ===
+            new OrderTestData(currentTime - 7 * oneMonth, 3),          // Tháng 1/2024
+            new OrderTestData(currentTime - 6 * oneMonth, 4),          // Tháng 2/2024  
+            new OrderTestData(currentTime - 5 * oneMonth, 5),          // Tháng 3/2024
+            
+            // === Q2/2024 - Giảm ===
+            new OrderTestData(currentTime - 4 * oneMonth, 2),          // Tháng 4/2024
+            new OrderTestData(currentTime - 3 * oneMonth, 1),          // Tháng 5/2024
+            new OrderTestData(currentTime - 2 * oneMonth, 3),          // Tháng 6/2024
+            
+            // === Q3/2024 (Tháng 7) - Tăng mạnh ===
+            new OrderTestData(currentTime - oneMonth, 8),              // Tháng 7/2024
+            
+            // === 1 tuần gần đây - Mua rất nhiều ===
+            new OrderTestData(currentTime - 6 * oneDay, 3),           // 6 ngày trước
+            new OrderTestData(currentTime - 5 * oneDay, 2),           // 5 ngày trước
+            new OrderTestData(currentTime - 4 * oneDay, 4),           // 4 ngày trước  
+            new OrderTestData(currentTime - 3 * oneDay, 1),           // 3 ngày trước
+            new OrderTestData(currentTime - 2 * oneDay, 5),           // 2 ngày trước
+            new OrderTestData(currentTime - oneDay, 3),               // 1 ngày trước
+            new OrderTestData(currentTime, 2)                        // Hôm nay
+        );
+        
+        int totalOrders = 0;
+        
+        // Tạo đơn hàng theo pattern
+        for (OrderTestData testData : orderPattern) {
+            for (int i = 0; i < testData.orderCount; i++) {
+                // Thêm random offset để đơn hàng không bị trùng timestamp
+                long randomOffset = (long) (Math.random() * 2 * 60 * 60 * 1000); // Random 0-2 giờ
+                long orderTime = testData.timestamp + randomOffset;
+                
+                // Tạo đơn hàng
+                Order order = createTestOrder(leVanC, address, OrderStatus.DELIVERED, "ONLINE", orderTime);
+                orderRepository.save(order);
+                
+                // Tạo order detail cho sách Đắc Nhân Tâm
+                int quantity = 1 + (int) (Math.random() * 2); // Mua 1-2 cuốn
+                OrderDetail detail = createOrderDetail(order, dacNhanTam, quantity, dacNhanTam.getPrice());
+                orderDetailRepository.save(detail);
+                
+                // Cập nhật tổng tiền đơn hàng
+                BigDecimal subtotal = dacNhanTam.getPrice().multiply(BigDecimal.valueOf(quantity));
+                order.setSubtotal(subtotal);
+                order.setTotalAmount(subtotal.add(order.getShippingFee()));
+                orderRepository.save(order);
+                
+                totalOrders++;
+            }
+        }
+        
+        log.info("Created {} test orders for Lê Văn C spanning from 2023 to present", totalOrders);
+        log.info("Orders distributed across different quarters and months for testing");
+        log.info("Recent week has the most orders, previous month has good amount");
+    }
+    */
+    
+    /*
+    /**
+     * Tạo Order với thời gian tùy chỉnh cho test data
+     */
+    /*
+    private Order createTestOrder(User customer, Address address, OrderStatus status, String orderType, long orderTime) {
+        Order order = new Order();
+        order.setUser(customer);
+        order.setAddress(address);
+        order.setOrderDate(orderTime); // Sử dụng thời gian tùy chỉnh
+        order.setSubtotal(BigDecimal.ZERO);
+        order.setShippingFee(new BigDecimal("30000"));
+        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setDiscountShipping(BigDecimal.ZERO);
+        order.setTotalAmount(BigDecimal.ZERO);
+        order.setOrderStatus(status);
+        order.setOrderType(orderType);
+        order.setCode("TEST" + System.currentTimeMillis() + "_" + Math.random());
+        order.setCreatedBy(customer.getId());
+        order.setStatus((byte) 1);
+        return order;
+    }
+    */
+    
+    // ===== 🎮 MINIGAME DATA INITIALIZATION =====
+    
+    /**
+     * Khởi tạo dữ liệu chiến dịch minigame
+     */
+    private void initializeCampaigns() {
+        log.info("Initializing minigame campaigns...");
+        
+        long currentTime = System.currentTimeMillis();
+        long oneWeek = 7L * 24 * 60 * 60 * 1000;
+        long oneMonth = 30L * 24 * 60 * 60 * 1000;
+        
+        List<Campaign> campaigns = Arrays.asList(
+            createCampaign("🎁 Chiến dịch mở hộp thần bí", 
+                          currentTime - oneWeek, currentTime + oneMonth,
+                          3, 100, "Chiến dịch mở hộp với nhiều phần thưởng hấp dẫn!"),
+            createCampaign("🎮 Event cuối tuần", 
+                          currentTime, currentTime + (7 * 24 * 60 * 60 * 1000L),
+                          5, 50, "Event đặc biệt cuối tuần với phần thưởng khủng!"),
+            createCampaign("💰 Săn voucher tháng 8", 
+                          currentTime + oneWeek, currentTime + (2 * oneMonth),
+                          2, 200, "Chiến dịch săn voucher với tỷ lệ trúng cao!")
+        );
+        campaignRepository.saveAll(campaigns);
+        log.info("Created {} campaigns", campaigns.size());
+    }
+    
+    private Campaign createCampaign(String name, Long startDate, Long endDate, 
+                                   Integer freeLimit, Integer pointCost, String description) {
+        Campaign campaign = new Campaign();
+        campaign.setName(name);
+        campaign.setStartDate(startDate);
+        campaign.setEndDate(endDate);
+        campaign.setConfigFreeLimit(freeLimit);
+        campaign.setConfigPointCost(pointCost);
+        campaign.setDescription(description);
+        campaign.setStatus((byte) 1);
+        campaign.setCreatedAt(System.currentTimeMillis());
+        campaign.setCreatedBy(1); // Admin
+        return campaign;
+    }
+    
+    /**
+     * Khởi tạo dữ liệu phần thưởng cho các chiến dịch
+     */
+    private void initializeRewards() {
+        log.info("Initializing minigame rewards...");
+        
+        List<Campaign> campaigns = campaignRepository.findAll();
+        if (campaigns.isEmpty()) {
+            log.warn("No campaigns found, skipping reward initialization");
+            return;
+        }
+        
+        Campaign firstCampaign = campaigns.get(0); // Lấy campaign đầu tiên
+        List<Voucher> availableVouchers = voucherRepository.findAll();
+        
+        List<Reward> rewards = new java.util.ArrayList<>();
+        
+        // ✅ FIX: Cập nhật để tổng xác suất = 100%
+        // 1. Phần thưởng "Không trúng gì" (65%)
+        rewards.add(createReward(firstCampaign, "Chúc bạn may mắn lần sau", "Không có phần thưởng", 
+                               RewardType.NONE, new java.math.BigDecimal("65.0"), null, null, null, 1000));
+        
+        // 2. Phần thưởng điểm (25% tổng)
+        rewards.add(createReward(firstCampaign, "Thưởng 50 điểm", "Nhận 50 điểm miễn phí", 
+                               RewardType.POINTS, new java.math.BigDecimal("15.0"), 50, null, null, 100));
+        rewards.add(createReward(firstCampaign, "Thưởng 100 điểm", "Nhận 100 điểm miễn phí", 
+                               RewardType.POINTS, new java.math.BigDecimal("7.0"), 100, null, null, 50));
+        rewards.add(createReward(firstCampaign, "Thưởng 500 điểm", "Nhận 500 điểm siêu khủng!", 
+                               RewardType.POINTS, new java.math.BigDecimal("3.0"), 500, null, null, 20));
+        
+        // 3. Phần thưởng voucher (10% còn lại)
+        if (!availableVouchers.isEmpty()) {
+            // Chỉ tạo 2 loại voucher với xác suất cố định để đảm bảo tổng = 100%
+            if (availableVouchers.size() >= 1) {
+                Voucher voucher1 = availableVouchers.get(0);
+                rewards.add(createReward(firstCampaign, "Voucher " + voucher1.getName(), 
+                                       "Trúng voucher " + voucher1.getName(), 
+                                       RewardType.VOUCHER, new java.math.BigDecimal("7.0"), 
+                                       null, voucher1, null, 30));
+            }
+            if (availableVouchers.size() >= 2) {
+                Voucher voucher2 = availableVouchers.get(1);
+                rewards.add(createReward(firstCampaign, "Voucher " + voucher2.getName(), 
+                                       "Trúng voucher " + voucher2.getName(), 
+                                       RewardType.VOUCHER, new java.math.BigDecimal("3.0"), 
+                                       null, voucher2, null, 15));
+            }
+        }
+        // Tổng: 65% + 15% + 7% + 3% + 7% + 3% = 100% ✅
+        
+        rewardRepository.saveAll(rewards);
+        log.info("Created {} rewards for campaign {}", rewards.size(), firstCampaign.getName());
+    }
+    
+    private Reward createReward(Campaign campaign, String name, String description, 
+                               RewardType type, java.math.BigDecimal probability, 
+                               Integer pointValue, Voucher voucher, Integer voucherId, 
+                               Integer quantity) {
+        Reward reward = new Reward();
+        reward.setCampaign(campaign);
+        reward.setName(name);
+        reward.setDescription(description);
+        reward.setType(type);
+        reward.setProbability(probability);
+        reward.setPointValue(pointValue);
+        reward.setVoucher(voucher);
+        // Note: voucherId parameter not used because Reward entity doesn't have voucherId field
+        reward.setStock(quantity);
+        reward.setStatus((byte) 1);
+        reward.setCreatedAt(System.currentTimeMillis());
+        reward.setCreatedBy(1); // Admin
+        return reward;
+    }
+    
+    /**
+     * Helper class cho test data pattern
+     */
+    private static class OrderTestData {
+        long timestamp;
+        int orderCount;
+        
+        OrderTestData(long timestamp, int orderCount) {
+            this.timestamp = timestamp;
+            this.orderCount = orderCount;
+        }
     }
 }

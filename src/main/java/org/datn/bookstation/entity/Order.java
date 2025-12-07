@@ -23,7 +23,7 @@ public class Order {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,13 +34,24 @@ public class Order {
     @JoinColumn(name = "address_id")
     private Address address;
 
+    //  THÊM: Thông tin người nhận cho đơn hàng tại quầy (khi address_id null)
+    @Size(max = 100)
+    @Nationalized
+    @Column(name = "recipient_name", length = 100)
+    private String recipientName;
+
+    @Size(max = 20)
+    @Nationalized
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
     @NotNull
     @Column(name = "order_date", nullable = false)
     private Long orderDate;
 
     // Tổng tiền sản phẩm (chưa tính phí ship, chưa giảm giá)
     @NotNull
-    @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
+    @Column(name = "subtotal", nullable = false, precision = 20, scale = 2)
     private BigDecimal subtotal;
 
     // Phí vận chuyển
@@ -60,7 +71,7 @@ public class Order {
 
     // Tổng tiền cuối cùng khách phải trả
     @NotNull
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 20, scale = 2)
     private BigDecimal totalAmount;
 
     @ColumnDefault("1")
@@ -68,7 +79,7 @@ public class Order {
     private Byte status;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "order_status", length = 20)
+    @Column(name = "order_status", length = 30)  //  Tăng từ 20 lên 30 để chứa GOODS_RETURNED_TO_WAREHOUSE
     private OrderStatus orderStatus;
     
     @Size(max = 20)
@@ -76,6 +87,12 @@ public class Order {
     @Nationalized
     @Column(name = "order_type", nullable = false, length = 20)
     private String orderType;
+    
+    //  THÊM MỚI: Phương thức thanh toán
+    @Size(max = 20)
+    @Nationalized
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod; // "COD", "ONLINE_PAYMENT", "BANK_TRANSFER", etc.
 
     @Nationalized
     @Lob
@@ -99,6 +116,24 @@ public class Order {
     private Integer shippingVoucherCount = 0;
 
     @Column(name = "created_at", nullable = false)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private java.util.List<OrderDetail> orderDetails;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "order_voucher",
+        joinColumns = @JoinColumn(name = "order_id"),
+        inverseJoinColumns = @JoinColumn(name = "voucher_id")
+    )
+    private java.util.List<Voucher> vouchers;
+
+    public java.util.List<OrderDetail> getOrderDetails() {
+        return orderDetails;
+    }
+
+    public java.util.List<Voucher> getVouchers() {
+        return vouchers;
+    }
     private Long createdAt;
 
     @Column(name = "updated_at")

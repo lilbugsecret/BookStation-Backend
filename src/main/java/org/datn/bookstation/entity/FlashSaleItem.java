@@ -2,7 +2,6 @@ package org.datn.bookstation.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +11,6 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 
@@ -55,6 +53,12 @@ public class FlashSaleItem {
     @Column(name = "max_purchase_per_user")
     Integer maxPurchasePerUser;
 
+    // ✅ THÊM MỚI: Số lượng đã bán flash sale
+    @ColumnDefault("0")
+    @Column(name = "sold_count")
+    @Builder.Default
+    Integer soldCount = 0;
+
     @Column(name = "created_at", nullable = false)
     Long createdAt;
 
@@ -67,6 +71,8 @@ public class FlashSaleItem {
     @Column(name = "updated_by")
     Long updatedBy;
 
+    @ColumnDefault("1")
+    @Column(name = "status")
     Byte status;
 
     @PrePersist

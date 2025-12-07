@@ -25,6 +25,7 @@ public class UserVoucher {
     @JoinColumn(name = "voucher_id", nullable = false)
     private Voucher voucher;
 
+   
     // Số lần đã sử dụng voucher này
     @Column(name = "used_count", nullable = false)
     private Integer usedCount = 0;
