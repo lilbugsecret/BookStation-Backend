@@ -126,23 +126,100 @@ Dự án gồm:
 - Maven 3.x
 - SQL Server đã cài đặt và tạo sẵn database
 
-### 3.2. Cấu hình kết nối SQL Server
+### 3.2. Cấu hình kết nối SQL Server và các dịch vụ
 
-Trong `src/main/resources/application.properties` (hoặc `.yml`), cấu hình tương tự:
+**Quan trọng:** Không commit thông tin nhạy cảm (password, API keys) vào repository. Sử dụng biến môi trường.
+
+#### Cách 1: Sử dụng file .env (khuyến nghị cho development)
+
+1. Copy file `.env.example` thành `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Cập nhật các giá trị trong file `.env`:
+```properties
+# Database Configuration
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRATION=86400000
+
+# Email Configuration (Gmail)
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_gmail_app_password
+
+# VNPay Configuration
+VNPAY_TMN_CODE=YOUR_TMN_CODE
+VNPAY_HASH_SECRET=YOUR_HASH_SECRET
+VNPAY_RETURN_URL=http://localhost:8080/api/payment/vnpay-return
+VNPAY_IPN_URL=http://localhost:8080/api/payment/vnpay-ipn
+```
+
+**Lưu ý về Gmail App Password:**
+- Không sử dụng mật khẩu Gmail thông thường
+- Tạo App Password tại: https://myaccount.google.com/apppasswords
+- Bật xác thực 2 bước trước khi tạo App Password
+
+#### Cách 2: Sử dụng biến môi trường hệ thống
+
+Thiết lập biến môi trường trước khi chạy ứng dụng:
+
+**Linux/macOS:**
+```bash
+export DB_USERNAME=your_db_username
+export DB_PASSWORD=your_db_password
+export MAIL_USERNAME=your_email@gmail.com
+export MAIL_PASSWORD=your_gmail_app_password
+export VNPAY_TMN_CODE=YOUR_TMN_CODE
+export VNPAY_HASH_SECRET=YOUR_HASH_SECRET
+```
+
+**Windows (Command Prompt):**
+```cmd
+set DB_USERNAME=your_db_username
+set DB_PASSWORD=your_db_password
+set MAIL_USERNAME=your_email@gmail.com
+set MAIL_PASSWORD=your_gmail_app_password
+set VNPAY_TMN_CODE=YOUR_TMN_CODE
+set VNPAY_HASH_SECRET=YOUR_HASH_SECRET
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:DB_USERNAME="your_db_username"
+$env:DB_PASSWORD="your_db_password"
+$env:MAIL_USERNAME="your_email@gmail.com"
+$env:MAIL_PASSWORD="your_gmail_app_password"
+$env:VNPAY_TMN_CODE="YOUR_TMN_CODE"
+$env:VNPAY_HASH_SECRET="YOUR_HASH_SECRET"
+```
+
+File `src/main/resources/application.properties` đã được cấu hình để đọc từ biến môi trường:
 
 ```properties
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=BookStation
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+spring.datasource.username=${DB_USERNAME:sa}
+spring.datasource.password=${DB_PASSWORD:123}
 spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
 
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServerDialect
 
-# Cấu hình JWT, đặt theo key mà dự án đang sử dụng
-jwt.secret=your_jwt_secret
-jwt.expiration=3600000
+# Cấu hình JWT
+jwt.secret=${JWT_SECRET:BookStation}
+jwt.expiration=${JWT_EXPIRATION:86400000}
+
+# Cấu hình Email
+spring.mail.username=${MAIL_USERNAME:your_email@gmail.com}
+spring.mail.password=${MAIL_PASSWORD:your_app_password}
+
+# Cấu hình VNPay
+vnpay.tmnCode=${VNPAY_TMN_CODE:YOUR_TMN_CODE}
+vnpay.hashSecret=${VNPAY_HASH_SECRET:YOUR_HASH_SECRET}
 ```
 
 ### 3.3. Build và chạy
@@ -229,9 +306,15 @@ Deploy thư mục `dist/` lên:
 
 ## 6. Ghi chú
 
-- Không commit thông tin nhạy cảm (password DB, JWT secret) lên repository.
-- Sử dụng biến môi trường cho cấu hình production.
+### Bảo mật và cấu hình
+
+- **QUAN TRỌNG:** Không bao giờ commit thông tin nhạy cảm (password DB, JWT secret, API keys, email password) lên repository.
+- **Luôn sử dụng biến môi trường** cho tất cả thông tin nhạy cảm trong production và development.
+- File `.env` và các biến thể của nó (`.env.local`, `.env.*.local`) đã được thêm vào `.gitignore`.
+- Sử dụng file `.env.example` làm template và tạo file `.env` của riêng bạn với thông tin thực tế.
+- Đối với Gmail, bắt buộc sử dụng App Password thay vì mật khẩu thông thường.
 - Cấu hình CORS trên backend để chỉ cho phép domain frontend hợp lệ truy cập API.
+- Trong production, đảm bảo tất cả các biến môi trường được thiết lập đúng cách trên server/hosting platform.
 
 ---
 

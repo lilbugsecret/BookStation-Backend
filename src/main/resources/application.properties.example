@@ -17,7 +17,7 @@ server.error.include-stacktrace=always
 spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=BookStation;trustServerCertificate=true;integratedSecurity=false;
 spring.datasource.username=${DB_USERNAME:sa}
-spring.datasource.password=${DB_PASSWORD:123}
+spring.datasource.password=${DB_PASSWORD:your_password}
 
 # C?u h�nh JPA/Hibernate
 # spring.sql.init.mode=never - Kh�ng ch?y script SQL t? ??ng (data.sql, schema.sql)
