@@ -26,6 +26,7 @@ public class OrderResponse {
     private BigDecimal shippingFee;
     private BigDecimal discountAmount;
     private BigDecimal discountShipping;
+    private BigDecimal voucherDiscountAmount; // ✅ THÊM: Tổng discount voucher áp dụng
     private BigDecimal totalAmount;
     private Integer regularVoucherCount;
     private Integer shippingVoucherCount;
@@ -33,6 +34,7 @@ public class OrderResponse {
     private OrderStatus orderStatus;
     private String orderStatusDisplay;
     private String orderType;
+    private String paymentMethod; // ✅ THÊM MỚI
     private Long createdAt;
     private Long updatedAt;
     private Integer createdBy;
@@ -41,4 +43,26 @@ public class OrderResponse {
     private List<VoucherResponse> vouchers;
     private String notes;
     private String cancelReason;
+    
+    // ✅ THÊM MỚI: Thông tin hoàn trả tổng quan
+    private String refundType; // "PARTIAL", "FULL", null
+    private BigDecimal totalRefundedAmount = BigDecimal.ZERO;
+    private String refundReason;
+    private String refundReasonDisplay; // ✅ THÊM: Hiển thị lý do hoàn trả bằng tiếng Việt
+    private Long refundDate;
+    private Integer refundedByStaff;
+    private String refundedByStaffName;
+    
+    // ✅ THÊM: Thông tin trạng thái có thể chuyển
+    private List<StatusTransitionOption> availableTransitions;
+    
+    @Getter
+    @Setter
+    public static class StatusTransitionOption {
+        private OrderStatus targetStatus;
+        private String displayName;
+        private String actionDescription;
+        private Boolean requiresConfirmation;
+        private String businessImpactNote;
+    }
 }

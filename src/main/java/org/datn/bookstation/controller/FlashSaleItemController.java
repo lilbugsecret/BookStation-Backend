@@ -3,12 +3,16 @@ package org.datn.bookstation.controller;
 import org.datn.bookstation.dto.request.FlashSaleItemRequest;
 import org.datn.bookstation.dto.response.ApiResponse;
 import org.datn.bookstation.dto.response.FlashSaleItemResponse;
+import org.datn.bookstation.dto.response.FlashSaleItemStatsResponse;
 import org.datn.bookstation.dto.response.PaginationResponse;
+import org.datn.bookstation.entity.Book;
 import org.datn.bookstation.service.FlashSaleItemService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/flash-sales/{flashSaleId}/items")
@@ -22,7 +26,7 @@ public class FlashSaleItemController {
             @PathVariable Integer flashSaleId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Integer bookId,
+            @RequestParam(required = false) String bookName,
             @RequestParam(required = false) Byte status,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
@@ -30,7 +34,7 @@ public class FlashSaleItemController {
             @RequestParam(required = false) BigDecimal maxPercent,
             @RequestParam(required = false) Integer minQuantity,
             @RequestParam(required = false) Integer maxQuantity) {
-        return flashSaleItemService.getAllWithFilter(page, size, flashSaleId, bookId, status,
+        return flashSaleItemService.getAllWithFilter(page, size, flashSaleId, bookName, status,
                 minPrice, maxPrice, minPercent, maxPercent, minQuantity, maxQuantity);
     }
 
@@ -40,7 +44,8 @@ public class FlashSaleItemController {
     }
 
     @PutMapping("/{itemId}")
-    public ApiResponse<FlashSaleItemResponse> update(@PathVariable Integer itemId, @RequestBody FlashSaleItemRequest request) {
+    public ApiResponse<FlashSaleItemResponse> update(@PathVariable Integer itemId,
+            @RequestBody FlashSaleItemRequest request) {
         return flashSaleItemService.update(itemId, request);
     }
 
@@ -48,4 +53,10 @@ public class FlashSaleItemController {
     public ApiResponse<FlashSaleItemResponse> toggleStatus(@PathVariable Integer itemId) {
         return flashSaleItemService.toggleStatus(itemId);
     }
-} 
+
+    @GetMapping("/stats")
+    public ApiResponse<FlashSaleItemStatsResponse> getFlashSaleStats() {
+        return flashSaleItemService.getFlashSaleStats();
+    }
+
+}

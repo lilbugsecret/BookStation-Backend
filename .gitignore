@@ -1,9 +1,12 @@
+documents/
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+uploads/
 
+documents/
 ### STS ###
 .apt_generated
 .classpath
@@ -29,5 +32,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+
 .vscode/
+.cursor/
+uploads/
+
+# Test files and logs
+*.ps1
+*.log
+test*.json
+et\ --hard\ HEAD@{1}
