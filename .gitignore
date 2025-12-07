@@ -41,4 +41,8 @@ uploads/
 *.ps1
 *.log
 test*.json
-et\ --hard\ HEAD@{1}
+
+# Environment variables
+.env
+.env.local
+.env.*.local
